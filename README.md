@@ -1,94 +1,192 @@
-# AVR8js
+# Curio Lab - Arduino Simulator Platform
 
-This is a JavaScript library that implementats the AVR 8-bit architecture.
+## Overview
 
-It's the heart- but not the whole body- of the Arduino simulator at [https://wokwi.com](https://wokwi.com).
+This is a web-based Arduino simulator platform built on top of **AVR8js** - a JavaScript implementation of the AVR 8-bit microcontroller architecture. The platform allows users to:
 
-[![Build Status](../../workflows/ci/badge.svg)](https://github.com/wokwi/avr8js/actions/workflows/ci.yml)
-[![NPM Version](https://img.shields.io/npm/v/avr8js)](https://www.npmjs.com/package/avr8js)
-![License: MIT](https://img.shields.io/npm/l/avr8js)
-![Types: TypeScript](https://img.shields.io/npm/types/avr8js)
-[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/wokwi/avr8js)
+- **Edit Arduino code** using Monaco Editor (VS Code's editor)
+- **Design circuits** by loading `diagram.json` files (Wokwi format)
+- **Simulate hardware** in real-time with visual feedback
+- **See connections** between components with accurate wire rendering
+- **Hear audio** from buzzers and other audio components
 
-## Example Applications Using `AVR8js`
+## What We've Built
 
-* [Wokwi Arduino Simulator](https://wokwi.com) - Arduino simulator with a choice of hardware that can be wired up dynamically in your browser!
-* [avr8js-electron playground](https://github.com/arcostasi/avr8js-electron-playground) - a Downloadable Electron Arduino simulator app
-* [AVR8js-Falstad](https://markmegarry.github.io/AVR8js-Falstad/) - combining the Falstad circuit simulator with AVR8js!
-* [The Engineering Physics Department of Dawson College's Arduino Course](https://tawjaw.github.io/Arduino-Robot-Virtual-Lab/) - an introduction to Arduino with a focus on robotics
+### Core Features
 
-## How to Use This Library
+1. **Generic Diagram Renderer**
+   - Parses Wokwi `diagram.json` format
+   - Dynamically renders components (Arduino, LEDs, buttons, buzzers, displays)
+   - Renders wires with accurate pin-to-pin connections
+   - Supports Manhattan routing (straight lines, 90-degree turns)
 
-This library only implements the AVR CPU core. 
-You have to supply it pre-compiled machine code to run, and implement functional simulations of any external hardware. You will probably also want to add  audio/visual representations of external hardware being simulated.
+2. **AVR8js Integration**
+   - Full ATmega328P simulation (Arduino Uno)
+   - Real-time CPU execution
+   - I/O port monitoring (PORTB, PORTC, PORTD)
+   - Timer simulation for PWM and `tone()`
 
-A rough conceptual diagram:
+3. **Component Simulation**
+   - **LEDs**: Visual feedback based on pin states
+   - **Pushbuttons**: Input handling with pull-up resistors
+   - **Buzzer**: Web Audio API integration with frequency detection from Timer2
+   - **7-Segment Displays**: Via shift register simulation (74HC595)
+   - **Arduino Uno**: Full board visualization with accurate pin positions
 
-```
-Pre-Compiled machine code --> AVR8js <--> Glue code <--> external hardware functional simulation <--> simulation state display for the user
-```
-You may be interested in exploring the [wokwi-elements](https://github.com/wokwi/wokwi-elements) collection of web-components for visual representations of many common hardware components. (Note: these are visual only elements- you will need to add the appropriate functional simulation and glue code.)
+4. **Code Compilation**
+   - Integration with `hexi.wokwi.com` online compiler
+   - Multi-file support (header inlining for `.h` files)
+   - Real-time compilation feedback
 
-### Walkthrough Video Tutorial
+5. **Serial Monitor**
+   - Captures Serial.print() output
+   - Real-time display of program output
 
-A step-by-step video tutorial showing how to build a simple Arduino simulator using AVR8js and React:
+### Technical Implementation
 
-[![AVR8JS Walkthrough Video](https://i.imgur.com/3meSd1m.png)](https://youtu.be/fArqj-USmjA)
+#### Pinout Data Extraction
+- Extracted accurate pin coordinates from `wokwi-elements-source`
+- Created `pinout-data-corrected.ts` with proper SVG viewBox coordinates
+- Enables precise wire rendering to actual pin positions
 
-And a related [blog post](https://blog.wokwi.com/avr8js-simulate-arduino-in-javascript/).
+#### Audio System
+- `BuzzerAudioController` class using Web Audio API
+- Reads Timer2 registers to extract frequency from Arduino's `tone()` function
+- Plays square wave tones matching the programmed frequency
 
-### Unofficial examples
+#### Component Registry
+- Maps Wokwi component types to `@wokwi/elements` web components
+- Handles unsupported components gracefully
+- Supports dynamic component loading
 
-These examples show working examples of using `avr8js` in an application. Many of them also demonstrate how to use the `wokwi-elements` and include working examples of functional simulations of the components, and how to hook them up to `avr8js`.
+#### Wire Rendering
+- SVG-based wire rendering
+- Manhattan routing (L-shaped paths)
+- Color-coded wires (red=power, black=ground, green=signal)
+- Real-time coordinate conversion from SVG to screen space
 
-* [Minimal Example](https://stackblitz.com/edit/avr8js-minimal?file=main.ts)
-* [6 LEDs](https://stackblitz.com/edit/avr8js-6leds?file=index.ts)
-* [LED PWM](https://stackblitz.com/edit/avr8js-pwm?file=index.ts)
-* [Serial Monitor](https://stackblitz.com/edit/avr8js-serial?file=index.ts)
-* [NeoPixel Matrix](https://stackblitz.com/edit/avr8js-ws2812?file=index.ts)
-* [Arduino MEGA NeoPixel Matrix](https://stackblitz.com/edit/avr8js-mega-ws2812?file=index.ts)
-* [Simon Game](https://stackblitz.com/edit/avr8js-simon-game?file=index.ts) - with pushbuttons and sound
-* [XMAS LEDs](https://stackblitz.com/edit/avr8js-xmas-dafna?file=index.ts)
-* [Assembly Code](https://stackblitz.com/edit/avr8js-asm?file=index.ts)
-* [EEPROM persistence](https://stackblitz.com/edit/avr8js-eeprom-localstorage?file=eeprom-localstorage-backend.ts)
-
-Note: they are all hosted outside of this repo.
-
-## Running the demo project
-
-The demo project allows you to edit Arduino code, compile it, and run it in the simulator.
-It also simulates 2 LEDs connected to pins 12 and 13 (PB4 and PB5). 
-
-To run the demo project, check out this repository, run `npm install` and then `npm start`.
-
-## Which chips can be simulated?
-
-The library focuses on simulating the *ATmega328p*, which is the MCU used by the Arduino Uno.
-
-However, the code is built in a modular way, and is highly configurable, making it possible
-to simulate many chips from the AVR8 family, such as the ATmega2560 and the ATtiny series:
-
-* [ATtiny85 Simulation](https://avr8js-attiny85.stackblitz.io?file=index.ts)
-
-Check out [issue 67](https://github.com/wokwi/avr8js/issues/67#issuecomment-728121667) and
-[issue 73](https://github.com/wokwi/avr8js/issues/73#issuecomment-743740477) for more information.
-
-## Running the tests
-
-Run the tests once:
+## Project Structure
 
 ```
-npm test
+avr8js/
+├── demo/                          # Main application
+│   ├── src/
+│   │   ├── diagram/              # Circuit visualization
+│   │   │   ├── parser.ts         # diagram.json parser
+│   │   │   ├── component-renderer.ts  # Component rendering
+│   │   │   ├── wire-renderer.ts  # Wire rendering
+│   │   │   ├── pinout-data-corrected.ts  # Pin coordinates
+│   │   │   ├── simulator-connector.ts   # AVR8js integration
+│   │   │   └── buzzer-audio.ts   # Audio controller
+│   │   ├── execute.ts            # AVRRunner class
+│   │   ├── compile.ts            # Code compilation
+│   │   └── generic-demo.ts       # Main application logic
+│   ├── generic.html              # Main UI
+│   └── vite.config.js            # Build configuration
+├── src/                          # AVR8js library (core simulator)
+│   ├── cpu/                      # CPU core
+│   └── peripherals/              # Hardware peripherals
+└── package.json                  # Dependencies
 ```
 
-Run the tests of the files you modified since last commit (watch mode):
+## How It Works
+
+### 1. Loading a Project
+
+1. **Load Diagram**: User clicks "Load diagram.json" → selects `diagram.json` file
+   - Parser extracts components and connections
+   - Components are rendered using `@wokwi/elements`
+   - Wires are drawn using SVG paths
+
+2. **Load Code**: User clicks "Load Code Files" → selects `.ino` and `.h` files
+   - Header files are inlined into main `.ino` file
+   - Code is displayed in Monaco Editor
+
+3. **Run**: User clicks "Run" button
+   - Code is sent to `hexi.wokwi.com` for compilation
+   - Compiled hex is loaded into AVR8js CPU
+   - Simulation starts executing
+   - Components update in real-time based on pin states
+
+### 2. Simulation Flow
 
 ```
-npm run test:watch
+Arduino Code → Compiler → Hex File → AVR8js CPU
+                                         ↓
+                              I/O Port Changes (PORTB/C/D)
+                                         ↓
+                              Component Listeners
+                                         ↓
+                    Visual Updates (LEDs, Displays, Audio)
 ```
 
-For more information, please check the [Contributing Guide](CONTRIBUTING.md).
+### 3. Component Connection
+
+- Each component has connections defined in `diagram.json`
+- Connections are parsed to extract Arduino pin → component pin mappings
+- Pin names are converted to port/bit pairs (e.g., "pin 9" → PORTB bit 1)
+- Listeners are attached to AVR8js ports
+- When port changes, components update their visual state
+
+## Current Limitations
+
+1. **Single-file compilation**: Header files must be inlined (compiler limitation)
+2. **Limited components**: Only components in `@wokwi/elements` are supported
+3. **No drag-and-drop**: Components are positioned from `diagram.json` only
+4. **Shift registers**: 74HC595 simulation is basic (works for 7-segment displays)
+
+## Future Enhancements
+
+1. **Multi-file compilation**: Use Arduino CLI for proper library support
+2. **Component dragging**: Allow users to reposition components
+3. **More components**: Add support for more Wokwi components
+4. **Cloud storage**: Save projects to Vercel Blob Storage
+5. **User authentication**: Multi-user support with Vercel Postgres
+6. **Tutor/Student system**: Role-based access for educational use
+
+## Deployment
+
+See `VERCEL_DEPLOYMENT_ANALYSIS.md` for detailed deployment information.
+
+**Quick Summary:**
+- **Size**: ~800 KB (gzipped) served to users
+- **Compute**: 0 server CPU (static site), 5-10% client CPU
+- **Cost**: $0/month (Free tier) for MVP
+- **Bandwidth**: Supports ~80,000 users/month on free tier
+
+## Development
+
+### Running Locally
+
+```bash
+npm install
+npm start
+```
+
+Open `http://localhost:3000/generic.html`
+
+### Testing
+
+1. **Simple Test Project**: `simple-test/` folder
+   - Basic LED and buzzer functionality
+   - Good for testing individual components
+
+2. **Simon Game**: `simon-with-score/` folder
+   - Full project with LEDs, buttons, buzzer, shift registers, 7-segment displays
+   - Tests complex interactions
+
+### Key Files to Modify
+
+- **UI Layout**: `demo/generic.html` and `demo/src/generic-demo.ts`
+- **Component Rendering**: `demo/src/diagram/component-renderer.ts`
+- **Wire Rendering**: `demo/src/diagram/wire-renderer.ts`
+- **Simulation Logic**: `demo/src/diagram/simulator-connector.ts`
+- **Pinout Data**: `demo/src/diagram/pinout-data-corrected.ts`
 
 ## License
 
-Copyright (C) 2019-2025 Uri Shaked. The code is released under the terms of the MIT license.
+This project is built on top of **AVR8js** (MIT License) and uses **@wokwi/elements** (MIT License).
+
+See `README.md` for the original AVR8js documentation.
+
+

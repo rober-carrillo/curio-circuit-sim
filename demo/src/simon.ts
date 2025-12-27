@@ -385,17 +385,25 @@ function updateShiftRegister() {
   if (shiftRegisterData.length >= 2) {
     const low = shiftRegisterData[0];
     const high = shiftRegisterData[1];
-    
+
     // Decode 7-segment patterns
     const digitTable: { [key: number]: number } = {
-      0b11000000: 0, 0b11111001: 1, 0b10100100: 2, 0b10110000: 3,
-      0b10011001: 4, 0b10010010: 5, 0b10000010: 6, 0b11111000: 7,
-      0b10000000: 8, 0b10010000: 9, 0b10111111: -1, // dash
+      0b11000000: 0,
+      0b11111001: 1,
+      0b10100100: 2,
+      0b10110000: 3,
+      0b10011001: 4,
+      0b10010010: 5,
+      0b10000010: 6,
+      0b11111000: 7,
+      0b10000000: 8,
+      0b10010000: 9,
+      0b10111111: -1, // dash
     };
-    
+
     const tensDigit = digitTable[high] ?? -1;
     const onesDigit = digitTable[low] ?? -1;
-    
+
     if (displayTens && displayOnes) {
       displayTens.value = tensDigit >= 0 ? tensDigit : null;
       displayOnes.value = onesDigit >= 0 ? onesDigit : null;
@@ -422,15 +430,15 @@ function executeProgram(hex: string) {
   });
 
   // Hook to PORTC for shift register (A0, A1, A2)
-  let shiftData: number[] = [];
+  const shiftData: number[] = [];
   let shiftClock = false;
   let shiftLatch = false;
-  
+
   runner.portC.addListener(() => {
     const dataPin = runner.portC.pinState(0); // A0 = PC0
     const clockPin = runner.portC.pinState(2) === PinState.High; // A2 = PC2
     const latchPin = runner.portC.pinState(1) === PinState.High; // A1 = PC1
-    
+
     // Detect clock rising edge
     if (clockPin && !shiftClock) {
       // Shift in data bit
@@ -438,7 +446,7 @@ function executeProgram(hex: string) {
       if (shiftData.length > 16) shiftData.shift(); // Keep last 16 bits
     }
     shiftClock = clockPin;
-    
+
     // Detect latch rising edge
     if (latchPin && !shiftLatch && shiftData.length >= 16) {
       // Extract two bytes (low byte first, then high byte)
@@ -526,5 +534,3 @@ function stopCode() {
 function loadSimonCode() {
   editor.setValue(FULL_SIMON_CODE);
 }
-
-

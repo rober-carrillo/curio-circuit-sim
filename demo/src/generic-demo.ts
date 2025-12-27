@@ -12,15 +12,18 @@ import { parseDiagram } from './diagram/parser';
 import { extractComponentConnections } from './diagram/pin-mapper';
 import { renderComponents } from './diagram/component-renderer';
 import { renderWires } from './diagram/wire-renderer';
-import { connectComponentsToSimulator, connectShiftRegisterDisplays } from './diagram/simulator-connector';
+import {
+  connectComponentsToSimulator,
+  connectShiftRegisterDisplays,
+} from './diagram/simulator-connector';
 import { buildPinoutsFromDiagram } from './diagram/pin-extractor';
-import { 
-  saveProject, 
-  loadProject, 
-  listSavedProjects, 
-  deleteProject, 
+import {
+  saveProject,
+  loadProject,
+  listSavedProjects,
+  deleteProject,
   downloadProject,
-  type ProjectData 
+  type ProjectData,
 } from './project-persistence';
 
 let editor: any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -35,16 +38,17 @@ window.require.config({
   paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' },
 });
 
-    window.require(['vs/editor/editor.main'], () => {
-      editor = monaco.editor.create(document.querySelector('.code-editor'), {
-        value: '// Load a diagram.json file to see components rendered here\n// Then paste your Arduino code here or load code files\n\n// Simple test code (uncomment to test):\n// void setup() {\n//   pinMode(9, OUTPUT);\n//   pinMode(10, OUTPUT);\n//   pinMode(11, OUTPUT);\n//   pinMode(12, OUTPUT);\n// }\n// void loop() {\n//   digitalWrite(9, HIGH);\n//   delay(500);\n//   digitalWrite(9, LOW);\n//   digitalWrite(10, HIGH);\n//   delay(500);\n//   digitalWrite(10, LOW);\n//   digitalWrite(11, HIGH);\n//   delay(500);\n//   digitalWrite(11, LOW);\n//   digitalWrite(12, HIGH);\n//   delay(500);\n//   digitalWrite(12, LOW);\n// }',
-        language: 'cpp',
-        minimap: { enabled: false },
-      });
-      editorReady = true;
-      // Try loading diagram after editor is ready (optional)
-      tryLoadDiagram();
-    });
+window.require(['vs/editor/editor.main'], () => {
+  editor = monaco.editor.create(document.querySelector('.code-editor'), {
+    value:
+      '// Load a diagram.json file to see components rendered here\n// Then paste your Arduino code here or load code files\n\n// Simple test code (uncomment to test):\n// void setup() {\n//   pinMode(9, OUTPUT);\n//   pinMode(10, OUTPUT);\n//   pinMode(11, OUTPUT);\n//   pinMode(12, OUTPUT);\n// }\n// void loop() {\n//   digitalWrite(9, HIGH);\n//   delay(500);\n//   digitalWrite(9, LOW);\n//   digitalWrite(10, HIGH);\n//   delay(500);\n//   digitalWrite(10, LOW);\n//   digitalWrite(11, HIGH);\n//   delay(500);\n//   digitalWrite(11, LOW);\n//   digitalWrite(12, HIGH);\n//   delay(500);\n//   digitalWrite(12, LOW);\n// }',
+    language: 'cpp',
+    minimap: { enabled: false },
+  });
+  editorReady = true;
+  // Try loading diagram after editor is ready (optional)
+  tryLoadDiagram();
+});
 
 // UI Elements
 const runButton = document.querySelector('#run-button');
@@ -53,7 +57,9 @@ const loadDiagramButton = document.querySelector('#load-diagram-button');
 const loadCodeButton = document.querySelector('#load-code-button');
 const saveProjectButton = document.querySelector('#save-project-button') as HTMLButtonElement;
 const loadSavedButton = document.querySelector('#load-saved-button');
-const downloadProjectButton = document.querySelector('#download-project-button') as HTMLButtonElement;
+const downloadProjectButton = document.querySelector(
+  '#download-project-button',
+) as HTMLButtonElement;
 const statusLabel = document.querySelector('#status-label');
 const compilerOutputText = document.querySelector('#compiler-output-text');
 const serialOutputText = document.querySelector('#serial-output-text');
@@ -80,17 +86,21 @@ async function tryLoadDiagram() {
       const text = await response.text();
       const diagram = parseDiagram(text);
       currentDiagram = diagram;
-      
+
       // Extract pin names from connections and build pinouts
       console.log('[DIAGRAM] Building pinouts from connections...');
       buildPinoutsFromDiagram(diagram.connections, diagram.parts);
-      
+
       // Render components
       if (componentsContainer) {
-        renderedComponents = renderComponents(diagram.parts, componentsContainer, diagram.connections);
-        
+        renderedComponents = renderComponents(
+          diagram.parts,
+          componentsContainer,
+          diagram.connections,
+        );
+
         console.log('Rendered components:', Array.from(renderedComponents.keys()));
-        
+
         // Render wires after components are positioned
         // Wait for LitElement components to fully render before accessing pinInfo
         // Use requestAnimationFrame to ensure DOM is updated
@@ -102,12 +112,12 @@ async function tryLoadDiagram() {
               console.log('[WIRE DEBUG] Removing existing SVG');
               existingSvg.remove();
             }
-            
+
             const svg = renderWires(
               diagram.connections,
               diagram.parts,
               renderedComponents,
-              componentsContainer
+              componentsContainer,
             );
             componentsContainer.appendChild(svg);
             console.log('[WIRE DEBUG] Wires rendered and appended');
@@ -122,7 +132,6 @@ async function tryLoadDiagram() {
   }
 }
 
-
 /**
  * Loads a diagram.json file
  */
@@ -133,7 +142,7 @@ async function loadDiagramFile() {
     input.accept = '.json';
     input.style.display = 'none'; // Hide the input
     document.body.appendChild(input); // Add to DOM (required for some browsers)
-    
+
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) {
@@ -142,42 +151,42 @@ async function loadDiagramFile() {
       }
 
       try {
-      const text = await file.text();
-      const diagram = parseDiagram(text);
-      currentDiagram = diagram;
-      
-      // Extract pin names from connections and build pinouts
-      console.log('[DIAGRAM] Building pinouts from connections...');
-      buildPinoutsFromDiagram(diagram.connections, diagram.parts);
-      
-      // Render components
-      if (componentsContainer) {
-        // Render all parts including Arduino
-        renderedComponents = renderComponents(
-          diagram.parts, // Use all parts directly
-          componentsContainer,
-          diagram.connections
-        );
-        
-        console.log('Rendered components:', Array.from(renderedComponents.keys()));
-          
+        const text = await file.text();
+        const diagram = parseDiagram(text);
+        currentDiagram = diagram;
+
+        // Extract pin names from connections and build pinouts
+        console.log('[DIAGRAM] Building pinouts from connections...');
+        buildPinoutsFromDiagram(diagram.connections, diagram.parts);
+
+        // Render components
+        if (componentsContainer) {
+          // Render all parts including Arduino
+          renderedComponents = renderComponents(
+            diagram.parts, // Use all parts directly
+            componentsContainer,
+            diagram.connections,
+          );
+
+          console.log('Rendered components:', Array.from(renderedComponents.keys()));
+
           // Render wires after components are positioned (use setTimeout to ensure DOM is ready)
           setTimeout(() => {
             // Remove any existing wire SVG
             const existingSvg = componentsContainer.querySelector('svg');
             if (existingSvg) existingSvg.remove();
-            
+
             console.log('Rendering wires for', diagram.connections.length, 'connections');
             const svg = renderWires(
               diagram.connections,
               diagram.parts,
               renderedComponents,
-              componentsContainer
+              componentsContainer,
             );
             componentsContainer.appendChild(svg);
             console.log('Wires rendered, SVG has', svg.children.length, 'paths');
           }, 200); // Increased delay to ensure all components are rendered
-          
+
           statusLabel.textContent = `Loaded ${renderedComponents.size} components`;
           enableProjectButtons();
         }
@@ -188,7 +197,7 @@ async function loadDiagramFile() {
         document.body.removeChild(input); // Clean up
       }
     };
-    
+
     // Trigger file dialog
     input.click();
   } catch (err) {
@@ -213,7 +222,7 @@ async function loadCodeFiles() {
     input.multiple = true;
     input.style.display = 'none'; // Hide the input
     document.body.appendChild(input); // Add to DOM (required for some browsers)
-    
+
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
       if (files.length === 0) {
@@ -229,7 +238,11 @@ async function loadCodeFiles() {
         // Read all files
         for (const file of files) {
           const text = await file.text();
-          if (file.name.endsWith('.ino') || file.name.endsWith('.cpp') || file.name.endsWith('.c')) {
+          if (
+            file.name.endsWith('.ino') ||
+            file.name.endsWith('.cpp') ||
+            file.name.endsWith('.c')
+          ) {
             mainCode = text; // Replace with new main file
           } else if (file.name.endsWith('.h')) {
             headerFiles.push({ name: file.name, content: text });
@@ -237,10 +250,14 @@ async function loadCodeFiles() {
         }
 
         // If no main file but we have headers, use current editor content
-        const hasMainFile = files.some(f => f.name.endsWith('.ino') || f.name.endsWith('.cpp') || f.name.endsWith('.c'));
-        
+        const hasMainFile = files.some(
+          (f) => f.name.endsWith('.ino') || f.name.endsWith('.cpp') || f.name.endsWith('.c'),
+        );
+
         if (!hasMainFile && mainCode.trim() === '') {
-          alert('Please select at least one .ino, .cpp, or .c file, or paste code in the editor first');
+          alert(
+            'Please select at least one .ino, .cpp, or .c file, or paste code in the editor first',
+          );
           return;
         }
 
@@ -255,7 +272,7 @@ async function loadCodeFiles() {
               new RegExp(`#include\\s+"${headerName}"`, 'g'),
               new RegExp(`#include\\s+<${headerName}>`, 'g'),
             ];
-            
+
             let replaced = false;
             for (const pattern of patterns) {
               if (pattern.test(mainCode)) {
@@ -265,7 +282,7 @@ async function loadCodeFiles() {
                 break;
               }
             }
-            
+
             // If no include found but we have a header, prepend it (for manual pasting)
             if (!replaced && headerFiles.length > 0 && !hasMainFile) {
               mainCode = header.content + '\n\n' + mainCode;
@@ -282,7 +299,7 @@ async function loadCodeFiles() {
         document.body.removeChild(input); // Clean up
       }
     };
-    
+
     // Trigger file dialog
     input.click();
   } catch (err) {
@@ -326,18 +343,18 @@ async function compileAndRun() {
     const code = editor.getModel().getValue();
     const result = await buildHex(code);
     compilerOutputText.textContent = result.stderr || result.stdout;
-    
+
     if (result.hex) {
       compilerOutputText.textContent += '\nProgram running...';
       stopButton.removeAttribute('disabled');
-      
+
       // Create runner
       runner = new AVRRunner(result.hex);
       const MHZ = 16000000;
-      
+
       console.log('[COMPILE DEBUG] Hex loaded, program size:', result.hex.length, 'bytes');
       console.log('[COMPILE DEBUG] CPU cycles at start:', runner.cpu.cycles);
-      
+
       // Log initial port states
       const logPortStates = () => {
         const portB = runner.cpu.data[0x25] || 0; // PORTB register
@@ -346,7 +363,7 @@ async function compileAndRun() {
         const ddrB = runner.cpu.data[0x24] || 0; // DDRB register
         const ddrC = runner.cpu.data[0x27] || 0; // DDRC register
         const ddrD = runner.cpu.data[0x2a] || 0; // DDRD register
-        
+
         return {
           PORTB: `0x${portB.toString(16).padStart(2, '0')}`,
           PORTC: `0x${portC.toString(16).padStart(2, '0')}`,
@@ -356,32 +373,38 @@ async function compileAndRun() {
           DDRD: `0x${ddrD.toString(16).padStart(2, '0')}`,
         };
       };
-      
+
       console.log('[PORT DEBUG] Initial port states:', logPortStates());
-      
+
       // Track port changes
       let lastPortB = runner.cpu.data[0x25] || 0;
       let lastPortC = runner.cpu.data[0x28] || 0;
       let lastPortD = runner.cpu.data[0x2b] || 0;
-      
+
       // Add listeners to track port changes
       runner.portB.addListener((value, oldValue) => {
         if (value !== lastPortB) {
-          console.log(`[PORT DEBUG] PORTB changed: 0x${lastPortB.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`);
+          console.log(
+            `[PORT DEBUG] PORTB changed: 0x${lastPortB.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`,
+          );
           lastPortB = value;
         }
       });
-      
+
       runner.portC.addListener((value, oldValue) => {
         if (value !== lastPortC) {
-          console.log(`[PORT DEBUG] PORTC changed: 0x${lastPortC.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`);
+          console.log(
+            `[PORT DEBUG] PORTC changed: 0x${lastPortC.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`,
+          );
           lastPortC = value;
         }
       });
-      
+
       runner.portD.addListener((value, oldValue) => {
         if (value !== lastPortD) {
-          console.log(`[PORT DEBUG] PORTD changed: 0x${lastPortD.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`);
+          console.log(
+            `[PORT DEBUG] PORTD changed: 0x${lastPortD.toString(16).padStart(2, '0')} → 0x${value.toString(16).padStart(2, '0')} (cycles: ${runner.cpu.cycles})`,
+          );
           lastPortD = value;
         }
       });
@@ -392,19 +415,13 @@ async function compileAndRun() {
       console.log('Rendered components:', Array.from(renderedComponents.keys()));
 
       // Connect components to simulator
-      simulatorConnections = connectComponentsToSimulator(
-        runner,
-        renderedComponents,
-        connections
-      );
-      
+      simulatorConnections = connectComponentsToSimulator(runner, renderedComponents, connections);
+
       // Test: Manually trigger port change to verify listeners work (REMOVED - was just for testing)
       // Removed the manual test - we want to see actual code execution
 
       // Check for shift register (74HC595) - Simon game uses A0, A1, A2
-      const hasShiftRegister = currentDiagram.parts.some(
-        (p: any) => p.type === 'wokwi-74hc595'
-      );
+      const hasShiftRegister = currentDiagram.parts.some((p: any) => p.type === 'wokwi-74hc595');
       if (hasShiftRegister) {
         const shiftConn = connectShiftRegisterDisplays(runner, renderedComponents, 0, 2, 1);
         // Combine cleanup
@@ -422,26 +439,26 @@ async function compileAndRun() {
 
       // Performance monitoring
       const cpuPerf = new CPUPerformance(runner.cpu, MHZ);
-      
+
       // Create a shared object to track running state
       const simulationState = { isRunning: true };
-      
+
       console.log('Starting simulation...');
       console.log('[SIM DEBUG] Initial port states:', logPortStates());
-      
+
       let lastCycleCount = 0;
       let cycleCheckInterval = 0;
-      
+
       runner.execute((cpu) => {
         if (!simulationState.isRunning) {
           // Stop the execution loop
           return;
         }
-        
+
         const time = formatTime(cpu.cycles / MHZ);
         const speed = (cpuPerf.update() * 100).toFixed(0);
         statusLabel.textContent = `Simulation time: ${time} (${speed}%)`;
-        
+
         // Verify CPU is executing (cycles should increase)
         const cyclesDelta = cpu.cycles - lastCycleCount;
         if (cyclesDelta === 0 && cycleCheckInterval++ > 100) {
@@ -451,17 +468,18 @@ async function compileAndRun() {
           lastCycleCount = cpu.cycles;
           cycleCheckInterval = 0;
         }
-        
+
         // Log port changes every 100ms for debugging
-        if (cpu.cycles % (MHZ / 10) < 50000) { // Roughly every 100ms
+        if (cpu.cycles % (MHZ / 10) < 50000) {
+          // Roughly every 100ms
           const currentStates = logPortStates();
           console.log(`[SIM DEBUG] Cycles: ${cpu.cycles.toLocaleString()}, States:`, currentStates);
         }
       });
-      
+
       // Store the simulation state on the runner so stopCode can access it
       (runner as any).simulationState = simulationState;
-      
+
       console.log('Simulation started, runner cycles:', runner.cpu.cycles);
     } else {
       runButton.removeAttribute('disabled');
@@ -481,12 +499,12 @@ function stopCode() {
   stopButton.setAttribute('disabled', '1');
   runButton.removeAttribute('disabled');
   loadDiagramButton.removeAttribute('disabled');
-  
+
   if (simulatorConnections) {
     simulatorConnections.cleanup();
     simulatorConnections = null;
   }
-  
+
   if (runner) {
     // Stop status updates first
     const simState = (runner as any).simulationState;
@@ -494,12 +512,12 @@ function stopCode() {
       simState.isRunning = false;
       console.log('Stopped simulation updates');
     }
-    
+
     // Stop the runner
     runner.stop();
     runner = null;
   }
-  
+
   statusLabel.textContent = 'Stopped';
 }
 
@@ -511,18 +529,18 @@ function handleSaveProject() {
     alert('No project to save. Please load a diagram and code first.');
     return;
   }
-  
+
   const projectName = prompt('Enter a name for this project:', currentProjectId || 'my-project');
   if (!projectName) return;
-  
+
   const projectData: ProjectData = {
     id: currentProjectId || projectName.toLowerCase().replace(/\s+/g, '-'),
     name: projectName,
     diagram: currentDiagram,
     code: editor.getValue(),
-    lastModified: Date.now()
+    lastModified: Date.now(),
   };
-  
+
   saveProject(projectData);
   currentProjectId = projectData.id;
   alert(`Project "${projectName}" saved successfully!`);
@@ -536,27 +554,28 @@ function handleLoadSaved() {
   const modal = document.getElementById('saved-projects-modal');
   const projectList = document.getElementById('project-list');
   const closeBtn = document.getElementById('modal-close');
-  
+
   if (!modal || !projectList) return;
-  
+
   // Get saved projects
   const projects = listSavedProjects();
-  
+
   // Clear existing list
   projectList.innerHTML = '';
-  
+
   if (projects.length === 0) {
-    projectList.innerHTML = '<li style="padding: 20px; text-align: center; color: #999;">No saved projects yet</li>';
+    projectList.innerHTML =
+      '<li style="padding: 20px; text-align: center; color: #999;">No saved projects yet</li>';
   } else {
     // Sort by last modified (newest first)
     projects.sort((a, b) => b.lastModified - a.lastModified);
-    
-    projects.forEach(proj => {
+
+    projects.forEach((proj) => {
       const li = document.createElement('li');
       li.className = 'project-item';
-      
+
       const date = new Date(proj.lastModified).toLocaleString();
-      
+
       li.innerHTML = `
         <div class="project-info" data-id="${proj.id}">
           <div class="project-name">${proj.name}</div>
@@ -567,12 +586,12 @@ function handleLoadSaved() {
           <button class="delete-btn" data-id="${proj.id}" style="background: #f44336; color: white;">Delete</button>
         </div>
       `;
-      
+
       projectList.appendChild(li);
     });
-    
+
     // Add event listeners for load/delete buttons
-    projectList.querySelectorAll('.load-btn').forEach(btn => {
+    projectList.querySelectorAll('.load-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const projectId = (e.target as HTMLElement).getAttribute('data-id');
@@ -582,8 +601,8 @@ function handleLoadSaved() {
         }
       });
     });
-    
-    projectList.querySelectorAll('.delete-btn').forEach(btn => {
+
+    projectList.querySelectorAll('.delete-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const projectId = (e.target as HTMLElement).getAttribute('data-id');
@@ -593,9 +612,9 @@ function handleLoadSaved() {
         }
       });
     });
-    
+
     // Also allow clicking the project info to load
-    projectList.querySelectorAll('.project-info').forEach(div => {
+    projectList.querySelectorAll('.project-info').forEach((div) => {
       div.addEventListener('click', () => {
         const projectId = div.getAttribute('data-id');
         if (projectId) {
@@ -605,15 +624,15 @@ function handleLoadSaved() {
       });
     });
   }
-  
+
   // Show modal
   modal.style.display = 'block';
-  
+
   // Close button
   closeBtn?.addEventListener('click', () => {
     modal.style.display = 'none';
   });
-  
+
   // Close on outside click
   window.addEventListener('click', (e) => {
     if (e.target === modal) {
@@ -631,53 +650,53 @@ async function loadSavedProject(projectId: string) {
     alert('Failed to load project');
     return;
   }
-  
+
   // Load diagram
   currentDiagram = project.diagram;
   currentProjectId = project.id;
-  
+
   // Extract pin names from connections and build pinouts
   console.log('[DIAGRAM] Building pinouts from connections...');
   buildPinoutsFromDiagram(project.diagram.connections, project.diagram.parts);
-  
+
   // Render components
   if (componentsContainer) {
     renderedComponents = renderComponents(
       project.diagram.parts,
       componentsContainer,
-      project.diagram.connections
+      project.diagram.connections,
     );
-    
+
     console.log('Rendered components:', Array.from(renderedComponents.keys()));
-    
+
     // Render wires after components are positioned
     setTimeout(() => {
       const existingSvg = componentsContainer.querySelector('svg');
       if (existingSvg) existingSvg.remove();
-      
+
       console.log('Rendering wires for', project.diagram.connections.length, 'connections');
       const svg = renderWires(
         project.diagram.connections,
         project.diagram.parts,
         renderedComponents,
-        componentsContainer
+        componentsContainer,
       );
       componentsContainer.appendChild(svg);
       console.log('Wires rendered, SVG has', svg.children.length, 'paths');
     }, 200);
-    
+
     statusLabel.textContent = `Loaded: ${project.name}`;
   }
-  
+
   // Load code into editor
   if (editor && editorReady) {
     editor.setValue(project.code);
   }
-  
+
   // Enable save/download buttons
   saveProjectButton.removeAttribute('disabled');
   downloadProjectButton.removeAttribute('disabled');
-  
+
   console.log(`[PERSISTENCE] Loaded project: ${project.name}`);
 }
 
@@ -689,15 +708,15 @@ function handleDownloadProject() {
     alert('No project to download. Please load a diagram and code first.');
     return;
   }
-  
+
   const projectData: ProjectData = {
     id: currentProjectId || 'project',
     name: currentProjectId || 'project',
     diagram: currentDiagram,
     code: editor.getValue(),
-    lastModified: Date.now()
+    lastModified: Date.now(),
   };
-  
+
   downloadProject(projectData);
   statusLabel.textContent = 'Project downloaded';
 }
@@ -709,4 +728,3 @@ function enableProjectButtons() {
     downloadProjectButton?.removeAttribute('disabled');
   }
 }
-

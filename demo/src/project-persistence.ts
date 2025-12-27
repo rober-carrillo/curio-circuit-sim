@@ -20,7 +20,7 @@ const PROJECTS_INDEX_KEY = 'avr8js-projects-index';
 export function listSavedProjects(): { id: string; name: string; lastModified: number }[] {
   const indexJson = localStorage.getItem(PROJECTS_INDEX_KEY);
   if (!indexJson) return [];
-  
+
   try {
     return JSON.parse(indexJson);
   } catch (e) {
@@ -35,26 +35,26 @@ export function listSavedProjects(): { id: string; name: string; lastModified: n
 export function saveProject(project: ProjectData): void {
   const key = STORAGE_KEY_PREFIX + project.id;
   project.lastModified = Date.now();
-  
+
   // Save project data
   localStorage.setItem(key, JSON.stringify(project));
-  
+
   // Update projects index
   const index = listSavedProjects();
-  const existingIndex = index.findIndex(p => p.id === project.id);
-  
+  const existingIndex = index.findIndex((p) => p.id === project.id);
+
   const indexEntry = {
     id: project.id,
     name: project.name,
-    lastModified: project.lastModified
+    lastModified: project.lastModified,
   };
-  
+
   if (existingIndex >= 0) {
     index[existingIndex] = indexEntry;
   } else {
     index.push(indexEntry);
   }
-  
+
   localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(index));
   console.log(`[PERSISTENCE] Saved project: ${project.name} (${project.id})`);
 }
@@ -65,12 +65,12 @@ export function saveProject(project: ProjectData): void {
 export function loadProject(projectId: string): ProjectData | null {
   const key = STORAGE_KEY_PREFIX + projectId;
   const dataJson = localStorage.getItem(key);
-  
+
   if (!dataJson) {
     console.warn(`[PERSISTENCE] Project ${projectId} not found in localStorage`);
     return null;
   }
-  
+
   try {
     return JSON.parse(dataJson);
   } catch (e) {
@@ -85,12 +85,12 @@ export function loadProject(projectId: string): ProjectData | null {
 export function deleteProject(projectId: string): void {
   const key = STORAGE_KEY_PREFIX + projectId;
   localStorage.removeItem(key);
-  
+
   // Update index
   const index = listSavedProjects();
-  const filtered = index.filter(p => p.id !== projectId);
+  const filtered = index.filter((p) => p.id !== projectId);
   localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(filtered));
-  
+
   console.log(`[PERSISTENCE] Deleted project: ${projectId}`);
 }
 
@@ -102,16 +102,12 @@ export function downloadProject(project: ProjectData): void {
   downloadFile(
     `${project.id}-diagram.json`,
     JSON.stringify(project.diagram, null, 2),
-    'application/json'
+    'application/json',
   );
-  
+
   // Download code file
-  downloadFile(
-    `${project.id}.ino`,
-    project.code,
-    'text/plain'
-  );
-  
+  downloadFile(`${project.id}.ino`, project.code, 'text/plain');
+
   console.log(`[PERSISTENCE] Downloaded project: ${project.name}`);
 }
 
@@ -135,22 +131,22 @@ function downloadFile(filename: string, content: string, mimeType: string): void
  */
 export async function importProjectFromFiles(
   diagramFile: File,
-  codeFile: File
+  codeFile: File,
 ): Promise<ProjectData> {
   const diagramText = await diagramFile.text();
   const codeText = await codeFile.text();
-  
+
   const diagram = JSON.parse(diagramText);
-  
+
   // Generate project ID from diagram file name (or random)
   const projectId = diagramFile.name.replace('.json', '').replace('diagram-', '');
-  
+
   return {
     id: projectId,
     name: diagram.name || projectId,
     diagram,
     code: codeText,
-    lastModified: Date.now()
+    lastModified: Date.now(),
   };
 }
 
@@ -159,19 +155,18 @@ export async function importProjectFromFiles(
  */
 export function checkStorageQuota(): { used: number; available: number; percentage: number } {
   let used = 0;
-  for (let key in localStorage) {
-    if (localStorage.hasOwnProperty(key)) {
+  for (const key in localStorage) {
+    if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
       used += localStorage[key].length + key.length;
     }
   }
-  
+
   // Most browsers have ~5-10MB localStorage limit
   const available = 10 * 1024 * 1024; // Assume 10MB
-  
+
   return {
     used,
     available,
-    percentage: (used / available) * 100
+    percentage: (used / available) * 100,
   };
 }
-
