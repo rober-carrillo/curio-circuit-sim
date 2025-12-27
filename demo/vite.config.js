@@ -9,7 +9,9 @@ const config = {
     alias: { avr8js: join(__dirname, '../src') },
   },
   server: {
-    open: true,
+    port: 3000,
+    open: '/generic.html', // Open generic.html by default
+    strictPort: false,
   },
 };
 

@@ -1,0 +1,25 @@
+{
+  "projects": [
+    {
+      "id": "simple-test",
+      "name": "Simple Test",
+      "description": "Basic LED and buzzer test with 5 buttons",
+      "files": {
+        "diagram": "/projects/simple-test/diagram.json",
+        "code": "/projects/simple-test/simple-test.ino"
+      }
+    },
+    {
+      "id": "simon-with-score",
+      "name": "Simon Says Game",
+      "description": "Full Simon game with LEDs, buttons, buzzer, shift registers, and 7-segment displays",
+      "files": {
+        "diagram": "/projects/simon-with-score/diagram.json",
+        "code": "/projects/simon-with-score/simon-with-score.ino",
+        "header": "/projects/simon-with-score/pitches.h"
+      }
+    }
+  ]
+}
+
+

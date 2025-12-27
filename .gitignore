@@ -1,6 +1,36 @@
-.cache
-.history
-.idea
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build output
+demo/dist/
+dist/
 *.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reference repository (keep locally, don't push to Git)
+wokwi-elements-source/
+
+# Backup documentation
+docs-backup/
+
+# Testing files
+test-*.js
+test-*.html
+
+# Saved web pages
+*.html_files/
+AVR8js - *.html
+Wokwi*.html
+
+# Environment variables (if you add them later)
+.env
+.env.local

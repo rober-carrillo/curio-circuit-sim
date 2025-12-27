@@ -1,0 +1,25 @@
+# Ignore source repository (not needed for production)
+wokwi-elements-source/
+
+# Ignore development files
+benchmark/
+docs-backup/
+
+# Ignore test files
+test-*.js
+test-*.html
+
+# Ignore development documentation
+*.md
+!README.md
+!CURIO_README.md
+!VERCEL_DEPLOYMENT_ANALYSIS.md
+
+# Ignore node_modules (Vercel will install from package.json)
+node_modules/
+
+# Ignore build artifacts
+demo/dist/
+*.log
+
+
