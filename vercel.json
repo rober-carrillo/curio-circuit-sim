@@ -3,7 +3,10 @@
   "outputDirectory": "demo/dist",
   "framework": "vite",
   "installCommand": "npm install",
-  "devCommand": "npm run start"
+  "devCommand": "npm run start",
+  "rewrites": [
+    { "source": "/", "destination": "/generic.html" }
+  ]
 }
 
 

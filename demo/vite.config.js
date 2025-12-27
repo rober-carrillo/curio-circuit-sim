@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 /**
  * @type {import('vite').UserConfig}
@@ -7,6 +7,13 @@ const config = {
   base: '',
   resolve: {
     alias: { avr8js: join(__dirname, '../src') },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'generic.html'),
+      },
+    },
   },
   server: {
     port: 3000,
