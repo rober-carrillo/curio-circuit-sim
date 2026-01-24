@@ -18,8 +18,8 @@ test-*.html
 # Ignore node_modules (Vercel will install from package.json)
 node_modules/
 
-# Ignore build artifacts
-demo/dist/
+# Ignore build artifacts (but keep API routes)
+# demo/dist/ - Don't ignore, needed for static files
 *.log
 
 
