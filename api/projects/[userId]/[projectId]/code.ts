@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // API route: Get or update project code file
 
-import { getCode, saveCode } from '../../../../_utils/storage';
-import { errorResponse, successResponse } from '../../../../_utils/response';
-import { handleOptions } from '../../../../_utils/cors';
+import { getCode, saveCode } from '../../../_utils/storage';
+import { errorResponse, successResponse } from '../../../_utils/response';
+import { handleOptions } from '../../../_utils/cors';
 
 export const config = {
   runtime: 'edge',

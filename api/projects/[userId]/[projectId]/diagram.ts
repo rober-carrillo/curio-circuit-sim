@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // API route: Get or update project diagram JSON
 
-import { getDiagram, saveDiagram } from '../../../../_utils/storage';
-import { jsonResponse, errorResponse, successResponse } from '../../../../_utils/response';
-import { handleOptions } from '../../../../_utils/cors';
+import { getDiagram, saveDiagram } from '../../../_utils/storage';
+import { jsonResponse, errorResponse, successResponse } from '../../../_utils/response';
+import { handleOptions } from '../../../_utils/cors';
 
 export const config = {
   runtime: 'edge',
