@@ -10,8 +10,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "allowJs": true
+    "noEmit": false,
+    "allowJs": true,
+    "outDir": ".vercel_build_output"
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]
