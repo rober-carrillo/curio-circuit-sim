@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:demo && cp -r api demo/dist/ 2>/dev/null || true",
+  "buildCommand": "npm run build:demo",
   "outputDirectory": "demo/dist",
   "framework": null,
   "installCommand": "npm install",
