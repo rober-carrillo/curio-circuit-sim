@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Simple test endpoint
 
-import { successResponse } from './_utils/response';
+const { successResponse } = require('./_utils/response');
 
-export const config = {
+module.exports.config = {
   runtime: 'nodejs',
 };
 
-export default async function handler(request: Request): Promise<Response> {
+module.exports = async function handler(request: Request): Promise<Response> {
   try {
     return successResponse({ 
       message: 'API is working!',
@@ -24,4 +24,4 @@ export default async function handler(request: Request): Promise<Response> {
       },
     });
   }
-}
+};

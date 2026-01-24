@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // CORS utility for API routes
 
-export interface CorsOptions {
+interface CorsOptions {
   origin?: string | string[];
   methods?: string[];
   allowedHeaders?: string[];
@@ -15,7 +15,7 @@ const DEFAULT_OPTIONS: CorsOptions = {
   credentials: false,
 };
 
-export function setCorsHeaders(response: Response, options: CorsOptions = {}): Response {
+function setCorsHeaders(response: Response, options: CorsOptions = {}): Response {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   
   const origin = Array.isArray(opts.origin) 
@@ -33,7 +33,12 @@ export function setCorsHeaders(response: Response, options: CorsOptions = {}): R
   return response;
 }
 
-export function handleOptions(): Response {
+function handleOptions(): Response {
   const response = new Response(null, { status: 204 });
   return setCorsHeaders(response);
 }
+
+module.exports = {
+  setCorsHeaders,
+  handleOptions,
+};
