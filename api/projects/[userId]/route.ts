@@ -13,21 +13,22 @@ interface Env {
   BLOB_READ_WRITE_TOKEN?: string;
 }
 
-export default async function handler(request: Request, env?: Env): Promise<Response> {
+export default async function handler(request: Request): Promise<Response> {
   // Handle CORS preflight
   if (request.method === 'OPTIONS') {
     return handleOptions();
   }
 
   const url = new URL(request.url);
-  const userId = url.pathname.split('/').filter(Boolean)[2]; // Extract userId from /api/projects/[userId]
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  const userId = pathParts[2]; // Extract userId from /api/projects/[userId]
 
   if (!userId) {
     return errorResponse('User ID is required', 400);
   }
 
   // Get blob token from environment
-  const token = env?.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   try {
     if (request.method === 'GET') {
