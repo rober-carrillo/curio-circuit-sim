@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Vercel Blob Storage utilities
 
-import { put, get, del, list } from '@vercel/blob';
+import { put, head, del, list, getDownloadUrl } from '@vercel/blob';
 
 // Get token from environment (set in Vercel dashboard)
 const getBlobToken = () => {
@@ -36,8 +36,13 @@ export async function saveDiagram(userId: string, projectId: string, diagramData
 export async function getDiagram(userId: string, projectId: string, token?: string): Promise<any | null> {
   const path = getProjectBlobPath(userId, projectId, 'diagram');
   try {
-    const blob = await get(path, { token: token || getBlobToken() });
-    const text = await blob.text();
+    const blobInfo = await head(path, { token: token || getBlobToken() });
+    const url = getDownloadUrl(path, { token: token || getBlobToken() });
+    const response = await fetch(url);
+    if (!response.ok) {
+      return null;
+    }
+    const text = await response.text();
     return JSON.parse(text);
   } catch (error: any) {
     if (error.status === 404 || error.message?.includes('not found')) {
@@ -67,8 +72,13 @@ export async function saveCode(userId: string, projectId: string, code: string, 
 export async function getCode(userId: string, projectId: string, token?: string): Promise<string | null> {
   const path = getProjectBlobPath(userId, projectId, 'code');
   try {
-    const blob = await get(path, { token: token || getBlobToken() });
-    return await blob.text();
+    const blobInfo = await head(path, { token: token || getBlobToken() });
+    const url = getDownloadUrl(path, { token: token || getBlobToken() });
+    const response = await fetch(url);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
   } catch (error: any) {
     if (error.status === 404 || error.message?.includes('not found')) {
       return null;
