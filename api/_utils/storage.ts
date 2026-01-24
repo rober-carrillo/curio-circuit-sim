@@ -35,9 +35,12 @@ export async function saveDiagram(userId: string, projectId: string, diagramData
  */
 export async function getDiagram(userId: string, projectId: string, token?: string): Promise<any | null> {
   const path = getProjectBlobPath(userId, projectId, 'diagram');
+  const blobToken = token || getBlobToken();
   try {
-    const blobInfo = await head(path, { token: token || getBlobToken() });
-    const url = getDownloadUrl(path, { token: token || getBlobToken() });
+    // Check if blob exists
+    await head(path, { token: blobToken });
+    // Get download URL and fetch the content
+    const url = getDownloadUrl(path, { token: blobToken });
     const response = await fetch(url);
     if (!response.ok) {
       return null;
@@ -45,9 +48,11 @@ export async function getDiagram(userId: string, projectId: string, token?: stri
     const text = await response.text();
     return JSON.parse(text);
   } catch (error: any) {
-    if (error.status === 404 || error.message?.includes('not found')) {
+    // If blob doesn't exist, return null
+    if (error.status === 404 || error.statusCode === 404 || error.message?.includes('not found') || error.message?.includes('404')) {
       return null;
     }
+    console.error('[Storage] Error getting diagram:', error);
     throw error;
   }
 }
@@ -71,18 +76,23 @@ export async function saveCode(userId: string, projectId: string, code: string, 
  */
 export async function getCode(userId: string, projectId: string, token?: string): Promise<string | null> {
   const path = getProjectBlobPath(userId, projectId, 'code');
+  const blobToken = token || getBlobToken();
   try {
-    const blobInfo = await head(path, { token: token || getBlobToken() });
-    const url = getDownloadUrl(path, { token: token || getBlobToken() });
+    // Check if blob exists
+    await head(path, { token: blobToken });
+    // Get download URL and fetch the content
+    const url = getDownloadUrl(path, { token: blobToken });
     const response = await fetch(url);
     if (!response.ok) {
       return null;
     }
     return await response.text();
   } catch (error: any) {
-    if (error.status === 404 || error.message?.includes('not found')) {
+    // If blob doesn't exist, return null
+    if (error.status === 404 || error.statusCode === 404 || error.message?.includes('not found') || error.message?.includes('404')) {
       return null;
     }
+    console.error('[Storage] Error getting code:', error);
     throw error;
   }
 }
