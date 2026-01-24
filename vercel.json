@@ -4,13 +4,11 @@
   "framework": null,
   "installCommand": "npm install",
   "devCommand": "npm run start",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
+  "cleanUrls": false,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/generic.html" }
+    { "source": "/", "destination": "/generic.html" },
+    { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "headers": [
     {
