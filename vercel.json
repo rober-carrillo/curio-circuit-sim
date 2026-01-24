@@ -1,6 +1,5 @@
 {
-  "buildCommand": "npm run build:demo",
-  "outputDirectory": "demo/dist",
+  "buildCommand": "npm run build:demo && mkdir -p public && cp -r demo/dist/* public/",
   "framework": null,
   "installCommand": "npm install",
   "devCommand": "npm run start",
