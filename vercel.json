@@ -4,6 +4,11 @@
   "framework": null,
   "installCommand": "npm install",
   "devCommand": "npm run start",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     { "source": "/", "destination": "/generic.html" }
   ],
