@@ -6,14 +6,14 @@ import { jsonResponse, errorResponse, successResponse } from '../../_utils/respo
 import { handleOptions } from '../../_utils/cors';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 interface Env {
   BLOB_READ_WRITE_TOKEN?: string;
 }
 
-export default async function handler(request: Request, env?: Env, ctx?: ExecutionContext): Promise<Response> {
+export default async function handler(request: Request, env?: Env): Promise<Response> {
   // Handle CORS preflight
   if (request.method === 'OPTIONS') {
     return handleOptions();
@@ -46,7 +46,7 @@ export default async function handler(request: Request, env?: Env, ctx?: Executi
       return successResponse({ projects });
     } else if (request.method === 'POST') {
       // Create new project
-      const body = await request.json();
+      const body = await request.json() as { projectId?: string; name?: string; diagram?: any; code?: string };
       const { projectId, name, diagram, code } = body;
 
       if (!projectId) {

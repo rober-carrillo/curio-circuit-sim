@@ -6,7 +6,6 @@ import { put, get, del, list } from '@vercel/blob';
 // Get token from environment (set in Vercel dashboard)
 const getBlobToken = () => {
   // In Vercel, this will be available as process.env.BLOB_READ_WRITE_TOKEN
-  // For edge runtime, we need to pass it explicitly
   return process.env.BLOB_READ_WRITE_TOKEN;
 };
 

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // API route: Embeddable simulator page
 
-import { getDiagram, getCode } from '../../_utils/storage';
-import { errorResponse } from '../../_utils/response';
-import { handleOptions } from '../../_utils/cors';
+import { getDiagram, getCode } from '../_utils/storage';
+import { errorResponse } from '../_utils/response';
+import { handleOptions } from '../_utils/cors';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 interface Env {

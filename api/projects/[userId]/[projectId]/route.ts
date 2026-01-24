@@ -6,7 +6,7 @@ import { jsonResponse, errorResponse, successResponse } from '../../../_utils/re
 import { handleOptions } from '../../../_utils/cors';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 interface Env {
