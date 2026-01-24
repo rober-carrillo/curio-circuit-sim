@@ -7,11 +7,6 @@
   "rewrites": [
     { "source": "/", "destination": "/generic.html" }
   ],
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "edge"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
