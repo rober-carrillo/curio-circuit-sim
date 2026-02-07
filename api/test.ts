@@ -1,27 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Simple test endpoint
 
-const { successResponse } = require('./_utils/response');
+import type { IncomingMessage, ServerResponse } from 'http';
+import { successResponse, errorResponse } from './_utils/response';
 
-module.exports.config = {
-  runtime: 'nodejs',
-};
+export const config = { runtime: 'nodejs' };
 
-module.exports = async function handler(request: Request): Promise<Response> {
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
-    return successResponse({ 
+    successResponse(res, {
       message: 'API is working!',
-      method: request.method,
-      url: request.url 
+      method: req.method,
+      url: req.url,
     });
-  } catch (error: any) {
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    errorResponse(res, message, 500);
   }
-};
+}

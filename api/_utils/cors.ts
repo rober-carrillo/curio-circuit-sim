@@ -1,44 +1,20 @@
 // SPDX-License-Identifier: MIT
-// CORS utility for API routes
+// CORS utility – sets headers on Node.js ServerResponse
 
-interface CorsOptions {
-  origin?: string | string[];
-  methods?: string[];
-  allowedHeaders?: string[];
-  credentials?: boolean;
+import type { ServerResponse } from 'http';
+
+const DEFAULT_ORIGIN = '*';
+const DEFAULT_METHODS = 'GET, POST, PUT, DELETE, OPTIONS';
+const DEFAULT_HEADERS = 'Content-Type, Authorization';
+
+export function setCorsHeaders(res: ServerResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', DEFAULT_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', DEFAULT_METHODS);
+  res.setHeader('Access-Control-Allow-Headers', DEFAULT_HEADERS);
 }
 
-const DEFAULT_OPTIONS: CorsOptions = {
-  origin: '*', // Allow all origins for now (restrict in production)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false,
-};
-
-function setCorsHeaders(response: Response, options: CorsOptions = {}): Response {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  
-  const origin = Array.isArray(opts.origin) 
-    ? opts.origin.join(', ') 
-    : opts.origin;
-
-  response.headers.set('Access-Control-Allow-Origin', origin || '*');
-  response.headers.set('Access-Control-Allow-Methods', opts.methods?.join(', ') || 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', opts.allowedHeaders?.join(', ') || 'Content-Type, Authorization');
-  
-  if (opts.credentials) {
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-  }
-
-  return response;
+export function handleOptions(res: ServerResponse): void {
+  setCorsHeaders(res);
+  res.writeHead(204);
+  res.end();
 }
-
-function handleOptions(): Response {
-  const response = new Response(null, { status: 204 });
-  return setCorsHeaders(response);
-}
-
-module.exports = {
-  setCorsHeaders,
-  handleOptions,
-};

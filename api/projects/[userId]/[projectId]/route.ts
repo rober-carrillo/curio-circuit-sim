@@ -1,74 +1,80 @@
 // SPDX-License-Identifier: MIT
 // API route: Get, update, or delete a specific project
 
+import type { IncomingMessage, ServerResponse } from 'http';
 import { getDiagram, getCode, deleteProjectFiles } from '../../../_utils/storage';
-import { jsonResponse, errorResponse, successResponse } from '../../../_utils/response';
+import { errorResponse, successResponse, getRequestBody } from '../../../_utils/response';
 import { handleOptions } from '../../../_utils/cors';
 
-export const config = {
-  runtime: 'nodejs',
-};
+export const config = { runtime: 'nodejs' };
 
-interface Env {
-  BLOB_READ_WRITE_TOKEN?: string;
+function getPathParts(req: IncomingMessage): string[] {
+  const url = req.url || '';
+  const path = url.split('?')[0];
+  return path.split('/').filter(Boolean);
 }
 
-export default async function handler(request: Request, env?: Env): Promise<Response> {
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return handleOptions();
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (req.method === 'OPTIONS') {
+    handleOptions(res);
+    return;
   }
 
-  const url = new URL(request.url);
-  const pathParts = url.pathname.split('/').filter(Boolean);
+  const pathParts = getPathParts(req);
   const userId = pathParts[2];
   const projectId = pathParts[3];
 
   if (!userId || !projectId) {
-    return errorResponse('User ID and Project ID are required', 400);
+    errorResponse(res, 'User ID and Project ID are required', 400);
+    return;
   }
 
-  // Get blob token from environment
-  const token = env?.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   try {
-    if (request.method === 'GET') {
-      // Get project metadata
+    if (req.method === 'GET') {
       const diagram = await getDiagram(userId, projectId, token);
       const code = await getCode(userId, projectId, token);
 
       if (!diagram && !code) {
-        return errorResponse('Project not found', 404);
+        errorResponse(res, 'Project not found', 404);
+        return;
       }
 
-      return successResponse({
+      successResponse(res, {
         id: projectId,
         userId,
-        name: projectId, // TODO: Store actual project name
+        name: projectId,
         hasDiagram: !!diagram,
         hasCode: !!code,
-        createdAt: new Date().toISOString(), // TODO: Store actual creation date
-        updatedAt: new Date().toISOString(), // TODO: Store actual update date
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
-    } else if (request.method === 'PUT') {
-      // Update project metadata (for now, just return success)
-      // TODO: Implement actual metadata updates when we add a database
-      const body = await request.json();
-      return successResponse({
+      return;
+    }
+
+    if (req.method === 'PUT') {
+      const bodyStr = await getRequestBody(req);
+      const body = JSON.parse(bodyStr) as { name?: string };
+      successResponse(res, {
         id: projectId,
         userId,
         name: body.name || projectId,
         updatedAt: new Date().toISOString(),
       });
-    } else if (request.method === 'DELETE') {
-      // Delete project files
-      await deleteProjectFiles(userId, projectId, token);
-      return successResponse({ message: 'Project deleted successfully' });
-    } else {
-      return errorResponse('Method not allowed', 405);
+      return;
     }
-  } catch (error: any) {
-    console.error('[API] Error:', error);
-    return errorResponse(error.message || 'Internal server error', 500);
+
+    if (req.method === 'DELETE') {
+      await deleteProjectFiles(userId, projectId, token);
+      successResponse(res, { message: 'Project deleted successfully' });
+      return;
+    }
+
+    errorResponse(res, 'Method not allowed', 405);
+  } catch (err: unknown) {
+    console.error('[API] Error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    errorResponse(res, message, 500);
   }
 }

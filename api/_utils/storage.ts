@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Vercel Blob Storage utilities
 
-import { put, head, del, list, getDownloadUrl } from '@vercel/blob';
+import { put, head, del, list } from '@vercel/blob';
 
 // Get token from environment (set in Vercel dashboard)
 const getBlobToken = () => {
@@ -37,18 +37,14 @@ export async function getDiagram(userId: string, projectId: string, token?: stri
   const path = getProjectBlobPath(userId, projectId, 'diagram');
   const blobToken = token || getBlobToken();
   try {
-    // Check if blob exists
-    await head(path, { token: blobToken });
-    // Get download URL and fetch the content
-    const url = getDownloadUrl(path, { token: blobToken });
-    const response = await fetch(url);
+    const meta = await head(path, { token: blobToken });
+    const response = await fetch(meta.url);
     if (!response.ok) {
       return null;
     }
     const text = await response.text();
     return JSON.parse(text);
   } catch (error: any) {
-    // If blob doesn't exist, return null
     if (error.status === 404 || error.statusCode === 404 || error.message?.includes('not found') || error.message?.includes('404')) {
       return null;
     }
@@ -78,17 +74,13 @@ export async function getCode(userId: string, projectId: string, token?: string)
   const path = getProjectBlobPath(userId, projectId, 'code');
   const blobToken = token || getBlobToken();
   try {
-    // Check if blob exists
-    await head(path, { token: blobToken });
-    // Get download URL and fetch the content
-    const url = getDownloadUrl(path, { token: blobToken });
-    const response = await fetch(url);
+    const meta = await head(path, { token: blobToken });
+    const response = await fetch(meta.url);
     if (!response.ok) {
       return null;
     }
     return await response.text();
   } catch (error: any) {
-    // If blob doesn't exist, return null
     if (error.status === 404 || error.statusCode === 404 || error.message?.includes('not found') || error.message?.includes('404')) {
       return null;
     }

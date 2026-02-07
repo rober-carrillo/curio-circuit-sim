@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
-// Simple health check endpoint with NO imports
+// Health check endpoint
 
-module.exports.config = {
-  runtime: 'nodejs',
-};
+import type { IncomingMessage, ServerResponse } from 'http';
+import { setCorsHeaders } from './_utils/cors';
 
-module.exports = async function handler(request: Request): Promise<Response> {
-  return new Response(JSON.stringify({ 
+export const config = { runtime: 'nodejs' };
+
+export default async function handler(_req: IncomingMessage, res: ServerResponse): Promise<void> {
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  res.writeHead(200);
+  res.end(JSON.stringify({
     status: 'ok',
     message: 'API is working!',
-    timestamp: new Date().toISOString()
-  }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
-};
+    timestamp: new Date().toISOString(),
+  }));
+}

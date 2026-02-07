@@ -1,65 +1,63 @@
 // SPDX-License-Identifier: MIT
 // API route: Get or update project diagram JSON
 
+import type { IncomingMessage, ServerResponse } from 'http';
 import { getDiagram, saveDiagram } from '../../../_utils/storage';
-import { jsonResponse, errorResponse, successResponse } from '../../../_utils/response';
+import { errorResponse, successResponse, getRequestBody } from '../../../_utils/response';
 import { handleOptions } from '../../../_utils/cors';
 
-export const config = {
-  runtime: 'nodejs',
-};
+export const config = { runtime: 'nodejs' };
 
-interface Env {
-  BLOB_READ_WRITE_TOKEN?: string;
+function getPathParts(req: IncomingMessage): string[] {
+  const url = req.url || '';
+  const path = url.split('?')[0];
+  return path.split('/').filter(Boolean);
 }
 
-export default async function handler(request: Request, env?: Env): Promise<Response> {
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return handleOptions();
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (req.method === 'OPTIONS') {
+    handleOptions(res);
+    return;
   }
 
-  const url = new URL(request.url);
-  const pathParts = url.pathname.split('/').filter(Boolean);
+  const pathParts = getPathParts(req);
   const userId = pathParts[2];
   const projectId = pathParts[3];
 
   if (!userId || !projectId) {
-    return errorResponse('User ID and Project ID are required', 400);
+    errorResponse(res, 'User ID and Project ID are required', 400);
+    return;
   }
 
-  // Get blob token from environment
-  const token = env?.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   try {
-    if (request.method === 'GET') {
-      // Get diagram JSON
+    if (req.method === 'GET') {
       const diagram = await getDiagram(userId, projectId, token);
-      
       if (!diagram) {
-        return errorResponse('Diagram not found', 404);
+        errorResponse(res, 'Diagram not found', 404);
+        return;
       }
-
-      return successResponse(diagram);
-    } else if (request.method === 'PUT') {
-      // Save diagram JSON
-      const diagram = await request.json();
-      
-      if (!diagram || typeof diagram !== 'object') {
-        return errorResponse('Invalid diagram data', 400);
-      }
-
-      const url = await saveDiagram(userId, projectId, diagram, token);
-      
-      return successResponse({
-        url,
-        message: 'Diagram saved successfully',
-      });
-    } else {
-      return errorResponse('Method not allowed', 405);
+      successResponse(res, diagram);
+      return;
     }
-  } catch (error: any) {
-    console.error('[API] Error:', error);
-    return errorResponse(error.message || 'Internal server error', 500);
+
+    if (req.method === 'PUT') {
+      const bodyStr = await getRequestBody(req);
+      const diagram = JSON.parse(bodyStr);
+      if (!diagram || typeof diagram !== 'object') {
+        errorResponse(res, 'Invalid diagram data', 400);
+        return;
+      }
+      const url = await saveDiagram(userId, projectId, diagram, token);
+      successResponse(res, { url, message: 'Diagram saved successfully' });
+      return;
+    }
+
+    errorResponse(res, 'Method not allowed', 405);
+  } catch (err: unknown) {
+    console.error('[API] Error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    errorResponse(res, message, 500);
   }
 }

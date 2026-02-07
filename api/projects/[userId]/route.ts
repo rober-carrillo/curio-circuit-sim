@@ -1,85 +1,82 @@
 // SPDX-License-Identifier: MIT
 // API route: List projects for a user or create a new project
 
-import { listUserProjects } from '../../_utils/storage';
-import { jsonResponse, errorResponse, successResponse } from '../../_utils/response';
+import type { IncomingMessage, ServerResponse } from 'http';
+import { listUserProjects, saveDiagram, saveCode } from '../../_utils/storage';
+import { errorResponse, successResponse, getRequestBody } from '../../_utils/response';
 import { handleOptions } from '../../_utils/cors';
 
-export const config = {
-  runtime: 'nodejs',
-};
+export const config = { runtime: 'nodejs' };
 
-interface Env {
-  BLOB_READ_WRITE_TOKEN?: string;
+function getPathParts(req: IncomingMessage): string[] {
+  const url = req.url || '';
+  const path = url.split('?')[0];
+  return path.split('/').filter(Boolean);
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return handleOptions();
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (req.method === 'OPTIONS') {
+    handleOptions(res);
+    return;
   }
 
-  const url = new URL(request.url);
-  const pathParts = url.pathname.split('/').filter(Boolean);
-  const userId = pathParts[2]; // Extract userId from /api/projects/[userId]
+  const pathParts = getPathParts(req);
+  const userId = pathParts[2]; // /api/projects/[userId]
 
   if (!userId) {
-    return errorResponse('User ID is required', 400);
+    errorResponse(res, 'User ID is required', 400);
+    return;
   }
 
-  // Get blob token from environment
   const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   try {
-    if (request.method === 'GET') {
-      // List all projects for user
+    if (req.method === 'GET') {
       const projectIds = await listUserProjects(userId, token);
-      
-      // Return project list with metadata
-      const projects = projectIds.map(id => ({
+      const projects = projectIds.map((id) => ({
         id,
         userId,
-        name: id, // Default name is the project ID (can be enhanced later)
-        createdAt: new Date().toISOString(), // TODO: Store actual creation date
-        updatedAt: new Date().toISOString(), // TODO: Store actual update date
+        name: id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }));
+      successResponse(res, { projects });
+      return;
+    }
 
-      return successResponse({ projects });
-    } else if (request.method === 'POST') {
-      // Create new project
-      const body = await request.json() as { projectId?: string; name?: string; diagram?: any; code?: string };
+    if (req.method === 'POST') {
+      const bodyStr = await getRequestBody(req);
+      const body = JSON.parse(bodyStr) as { projectId?: string; name?: string; diagram?: unknown; code?: string };
       const { projectId, name, diagram, code } = body;
 
       if (!projectId) {
-        return errorResponse('Project ID is required', 400);
+        errorResponse(res, 'Project ID is required', 400);
+        return;
       }
-
-      const { saveDiagram, saveCode } = await import('../../_utils/storage');
 
       const urls: { diagramUrl?: string; codeUrl?: string } = {};
 
-      // Save diagram if provided
       if (diagram) {
         urls.diagramUrl = await saveDiagram(userId, projectId, diagram, token);
       }
-
-      // Save code if provided
       if (code) {
         urls.codeUrl = await saveCode(userId, projectId, code, token);
       }
 
-      return successResponse({
+      successResponse(res, {
         id: projectId,
         userId,
         name: name || projectId,
         ...urls,
         createdAt: new Date().toISOString(),
       }, 201);
-    } else {
-      return errorResponse('Method not allowed', 405);
+      return;
     }
-  } catch (error: any) {
-    console.error('[API] Error:', error);
-    return errorResponse(error.message || 'Internal server error', 500);
+
+    errorResponse(res, 'Method not allowed', 405);
+  } catch (err: unknown) {
+    console.error('[API] Error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    errorResponse(res, message, 500);
   }
 }
