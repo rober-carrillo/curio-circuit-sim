@@ -83,58 +83,75 @@ saveProjectButton?.addEventListener('click', handleSaveProject);
 loadSavedButton?.addEventListener('click', handleLoadSaved);
 downloadProjectButton?.addEventListener('click', handleDownloadProject);
 
-// Try to load diagram from common location (optional, fails gracefully)
-async function tryLoadDiagram() {
-  try {
-    const response = await fetch('/projects/simon-with-score/diagram.json');
-    if (response.ok) {
-      const text = await response.text();
-      const diagram = parseDiagram(text);
-      currentDiagram = diagram;
+// Static projects (diagram + code paths). Default is simple-test.
+const STATIC_PROJECTS: Record<string, { diagram: string; code: string }> = {
+  'simple-test': {
+    diagram: '/projects/simple-test/diagram.json',
+    code: '/projects/simple-test/simple-test.ino',
+  },
+  'simon-with-score': {
+    diagram: '/projects/simon-with-score/diagram.json',
+    code: '/projects/simon-with-score/simon-with-score.ino',
+  },
+};
 
-      // Extract pin names from connections and build pinouts
-      console.log('[DIAGRAM] Building pinouts from connections...');
-      buildPinoutsFromDiagram(diagram.connections, diagram.parts);
+const DEFAULT_STATIC_PROJECT = 'simple-test';
 
-      // Render components
-      if (componentsContainer) {
-        renderedComponents = renderComponents(
-          diagram.parts,
+function applyDiagramAndCode(diagram: any, code: string) {
+  if (!diagram) return;
+  currentDiagram = diagram;
+  buildPinoutsFromDiagram(diagram.connections || [], diagram.parts || []);
+  if (componentsContainer) {
+    renderedComponents = renderComponents(
+      diagram.parts || [],
+      componentsContainer,
+      diagram.connections || [],
+    );
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const existingSvg = componentsContainer.querySelector('svg');
+        if (existingSvg) existingSvg.remove();
+        const svg = renderWires(
+          diagram.connections || [],
+          diagram.parts || [],
+          renderedComponents,
           componentsContainer,
-          diagram.connections,
         );
-
-        console.log('Rendered components:', Array.from(renderedComponents.keys()));
-
-        // Render wires after components are positioned
-        // Wait for LitElement components to fully render before accessing pinInfo
-        // Use requestAnimationFrame to ensure DOM is updated
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            console.log('[WIRE DEBUG] Rendering wires...');
-            const existingSvg = componentsContainer.querySelector('svg');
-            if (existingSvg) {
-              console.log('[WIRE DEBUG] Removing existing SVG');
-              existingSvg.remove();
-            }
-
-            const svg = renderWires(
-              diagram.connections,
-              diagram.parts,
-              renderedComponents,
-              componentsContainer,
-            );
-            componentsContainer.appendChild(svg);
-            console.log('[WIRE DEBUG] Wires rendered and appended');
-          }, 100);
-        });
-        statusLabel.textContent = `Loaded diagram: ${renderedComponents.size} components`;
-        enableProjectButtons();
-      }
-    }
-  } catch (err) {
-    // Fail silently - user can load manually
+        componentsContainer.appendChild(svg);
+      }, 100);
+    });
+    statusLabel.textContent = `Loaded diagram: ${(diagram.parts || []).length} components`;
+    enableProjectButtons();
   }
+  if (editor && editorReady && code) {
+    editor.setValue(code);
+  }
+}
+
+// Load a static project by id (from URL ?project= or default). Fails gracefully.
+async function tryLoadStaticProject(projectId: string): Promise<boolean> {
+  const paths = STATIC_PROJECTS[projectId];
+  if (!paths) return false;
+  try {
+    const [diagramRes, codeRes] = await Promise.all([
+      fetch(paths.diagram),
+      fetch(paths.code),
+    ]);
+    if (!diagramRes.ok) return false;
+    const diagram = parseDiagram(await diagramRes.text());
+    const code = codeRes.ok ? await codeRes.text() : '';
+    applyDiagramAndCode(diagram, code);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Try to load diagram/code: default simple-test, or ?project=simon-with-score
+async function tryLoadDiagram() {
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const projectId = params.get('project') || DEFAULT_STATIC_PROJECT;
+  await tryLoadStaticProject(projectId);
 }
 
 /**

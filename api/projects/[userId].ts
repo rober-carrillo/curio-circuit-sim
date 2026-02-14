@@ -2,9 +2,9 @@
 // API route: List projects for a user or create a new project
 
 import type { IncomingMessage, ServerResponse } from 'http';
-import { listUserProjects, saveDiagram, saveCode } from '../../_utils/storage';
-import { errorResponse, successResponse, getRequestBody } from '../../_utils/response';
-import { handleOptions } from '../../_utils/cors';
+import { listUserProjects, saveDiagram, saveCode } from '../_utils/storage';
+import { errorResponse, successResponse, getRequestBody } from '../_utils/response';
+import { handleOptions } from '../_utils/cors';
 
 export const config = { runtime: 'nodejs' };
 
@@ -69,6 +69,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         name: name || projectId,
         ...urls,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }, 201);
       return;
     }

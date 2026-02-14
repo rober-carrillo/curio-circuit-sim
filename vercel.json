@@ -5,7 +5,8 @@
   "installCommand": "npm install",
   "devCommand": "npm run start",
   "rewrites": [
-    { "source": "/", "destination": "/generic.html" }
+    { "source": "/", "destination": "/generic.html" },
+    { "source": "/simon", "destination": "/generic.html?project=simon-with-score" }
   ],
   "headers": [
     {
@@ -18,5 +19,3 @@
     }
   ]
 }
-
-

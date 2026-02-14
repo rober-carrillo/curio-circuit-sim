@@ -34,3 +34,5 @@ Wokwi*.html
 # Environment variables (if you add them later)
 .env
 .env.local
+.vercel
+.env*.local

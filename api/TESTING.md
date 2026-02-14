@@ -1,6 +1,22 @@
 # Testing the API
 
-## Quick Test After Deployment
+## Script (recommended)
+
+From the avr8js repo root, run:
+
+```bash
+node scripts/test-projects-api.mjs
+```
+
+Optional: use a different API base URL:
+
+```bash
+API_BASE=https://dev-platform-eight.vercel.app/api node scripts/test-projects-api.mjs
+```
+
+The script exercises: list projects, create project, get project, get diagram, get code.
+
+## Quick Test After Deployment (curl)
 
 Once deployed, test the API endpoints:
 
