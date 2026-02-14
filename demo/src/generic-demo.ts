@@ -46,8 +46,10 @@ window.require(['vs/editor/editor.main'], () => {
     minimap: { enabled: false },
   });
   editorReady = true;
-  // Try loading diagram after editor is ready (optional)
-  tryLoadDiagram();
+  // If URL has userId & projectId, load from API; otherwise try default diagram
+  tryLoadFromApi().then((loadedFromApi) => {
+    if (!loadedFromApi) tryLoadDiagram();
+  });
 });
 
 // UI Elements
@@ -68,6 +70,9 @@ const componentsContainer = document.querySelector('#components-container') as H
 let currentDiagram: any = null;
 let renderedComponents: Map<string, any> = new Map();
 let currentProjectId: string | null = null; // Track current project for saving
+let currentUserId: string | null = null; // When set, we are in API mode (load/save from API)
+
+const API_BASE = typeof window !== 'undefined' ? (window as any).SIMULATOR_API_BASE || '/api' : '/api';
 
 // Event Listeners
 runButton?.addEventListener('click', compileAndRun);
@@ -81,7 +86,7 @@ downloadProjectButton?.addEventListener('click', handleDownloadProject);
 // Try to load diagram from common location (optional, fails gracefully)
 async function tryLoadDiagram() {
   try {
-    const response = await fetch('../simon-with-score/diagram.json');
+    const response = await fetch('/projects/simon-with-score/diagram.json');
     if (response.ok) {
       const text = await response.text();
       const diagram = parseDiagram(text);
@@ -130,6 +135,90 @@ async function tryLoadDiagram() {
   } catch (err) {
     // Fail silently - user can load manually
   }
+}
+
+/**
+ * If URL has ?userId= & projectId=, load project from API and return true; else return false.
+ */
+async function tryLoadFromApi(): Promise<boolean> {
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const userId = params.get('userId');
+  const projectId = params.get('projectId');
+  if (!userId || !projectId) return false;
+
+  try {
+    const [diagramRes, codeRes] = await Promise.all([
+      fetch(`${API_BASE}/projects/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/diagram`),
+      fetch(`${API_BASE}/projects/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/code`),
+    ]);
+
+    let diagram: any = null;
+    let code = '';
+    if (diagramRes.ok) {
+      const data = await diagramRes.json();
+      diagram = data;
+    }
+    if (codeRes.ok) {
+      code = await codeRes.text();
+    }
+    if (!diagram && !code) {
+      console.warn('[API] No diagram or code found for project');
+      return false;
+    }
+
+    currentUserId = userId;
+    currentProjectId = projectId;
+
+    if (diagram) {
+      currentDiagram = diagram;
+      buildPinoutsFromDiagram(diagram.connections || [], diagram.parts || []);
+      if (componentsContainer) {
+        renderedComponents = renderComponents(
+          diagram.parts || [],
+          componentsContainer,
+          diagram.connections || [],
+        );
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const existingSvg = componentsContainer.querySelector('svg');
+            if (existingSvg) existingSvg.remove();
+            const svg = renderWires(
+              diagram.connections || [],
+              diagram.parts || [],
+              renderedComponents,
+              componentsContainer,
+            );
+            componentsContainer.appendChild(svg);
+          }, 100);
+        });
+        statusLabel.textContent = `Loaded from cloud: ${projectId}`;
+        enableProjectButtons();
+      }
+    }
+    if (editor && editorReady) {
+      editor.setValue(code || '// No code saved yet');
+    }
+    return true;
+  } catch (err) {
+    console.error('[API] Failed to load project:', err);
+    return false;
+  }
+}
+
+/**
+ * Save current diagram and code to the project API (when in API mode).
+ */
+async function saveToApi(userId: string, projectId: string, diagram: any, code: string): Promise<void> {
+  const diagramRes = await fetch(
+    `${API_BASE}/projects/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/diagram`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(diagram) },
+  );
+  const codeRes = await fetch(
+    `${API_BASE}/projects/${encodeURIComponent(userId)}/${encodeURIComponent(projectId)}/code`,
+    { method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: code },
+  );
+  if (!diagramRes.ok) throw new Error(`Diagram save failed: ${diagramRes.status}`);
+  if (!codeRes.ok) throw new Error(`Code save failed: ${codeRes.status}`);
 }
 
 /**
@@ -522,11 +611,24 @@ function stopCode() {
 }
 
 /**
- * Save current project to localStorage
+ * Save current project to localStorage or to API (when opened with userId/projectId).
  */
-function handleSaveProject() {
+async function handleSaveProject() {
   if (!currentDiagram || !editor) {
     alert('No project to save. Please load a diagram and code first.');
+    return;
+  }
+
+  if (currentUserId && currentProjectId) {
+    try {
+      statusLabel.textContent = 'Saving to cloud...';
+      await saveToApi(currentUserId, currentProjectId, currentDiagram, editor.getValue());
+      statusLabel.textContent = `Saved to cloud: ${currentProjectId}`;
+      alert('Project saved to cloud.');
+    } catch (err) {
+      console.error('[API] Save failed:', err);
+      alert('Failed to save to cloud: ' + (err instanceof Error ? err.message : err));
+    }
     return;
   }
 
