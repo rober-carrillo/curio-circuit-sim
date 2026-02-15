@@ -28,6 +28,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const params = getQuery(req);
   const userId = params.get('userId');
   const projectId = params.get('projectId');
+  const viewRaw = params.get('view');
+  const view =
+    viewRaw === 'code' || viewRaw === 'diagram' ? viewRaw : undefined;
 
   if (!userId || !projectId) {
     errorResponse(res, 'userId and projectId query parameters are required', 400);
@@ -68,6 +71,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       code: ${code ? JSON.stringify(code) : 'null'},
     };
     const params = new URLSearchParams({ userId: ${JSON.stringify(userId)}, projectId: ${JSON.stringify(projectId)} });
+    ${view ? `params.set('view', ${JSON.stringify(view)});` : ''}
     window.location.href = '/generic.html?' + params.toString();
   </script>
 </body>

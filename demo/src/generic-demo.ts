@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Generic demo that can render any Wokwi diagram.json file
 
+// Apply embed view mode from URL (?view=code | ?view=diagram) so only one panel is shown
+(function setEmbedView() {
+  if (typeof window === 'undefined') return;
+  const view = new URLSearchParams(window.location.search).get('view');
+  if (view === 'code') document.body.classList.add('embed-view-code');
+  else if (view === 'diagram') document.body.classList.add('embed-view-diagram');
+})();
+
 import '@wokwi/elements';
 import { buildHex } from './compile';
 import { CPUPerformance } from './cpu-performance';

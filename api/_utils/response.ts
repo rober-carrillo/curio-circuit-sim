@@ -19,6 +19,17 @@ export function errorResponse(res: ServerResponse, message: string, status: numb
   sendJson(res, status, { error: message });
 }
 
+/** Get pathname from req.url (handles full URL or path-only). */
+export function getPathname(urlStr: string | undefined): string {
+  const s = (urlStr || '').split('?')[0];
+  if (s.startsWith('/')) return s;
+  try {
+    return new URL(s).pathname;
+  } catch {
+    return s;
+  }
+}
+
 /** Read request body as string (for JSON or text). */
 export function getRequestBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {

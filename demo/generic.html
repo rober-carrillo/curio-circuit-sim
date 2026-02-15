@@ -243,6 +243,22 @@
         padding: 4px 8px;
         cursor: pointer;
       }
+
+      /* Embed view: show only one panel (used when ?view=code or ?view=diagram) */
+      body.embed-view-code .right-panel {
+        display: none !important;
+      }
+      body.embed-view-code .left-panel {
+        flex: 1 1 100%;
+        width: 100%;
+      }
+      body.embed-view-diagram .left-panel {
+        display: none !important;
+      }
+      body.embed-view-diagram .right-panel {
+        flex: 1 1 100%;
+        width: 100%;
+      }
     </style>
   </head>
   <body>

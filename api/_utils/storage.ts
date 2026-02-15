@@ -38,7 +38,9 @@ export async function getDiagram(userId: string, projectId: string, token?: stri
   const blobToken = token || getBlobToken();
   try {
     const meta = await head(path, { token: blobToken });
-    const response = await fetch(meta.url);
+    const url = meta?.url;
+    if (!url) return null;
+    const response = await fetch(url);
     if (!response.ok) {
       return null;
     }
@@ -75,7 +77,9 @@ export async function getCode(userId: string, projectId: string, token?: string)
   const blobToken = token || getBlobToken();
   try {
     const meta = await head(path, { token: blobToken });
-    const response = await fetch(meta.url);
+    const url = meta?.url;
+    if (!url) return null;
+    const response = await fetch(url);
     if (!response.ok) {
       return null;
     }

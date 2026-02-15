@@ -3,15 +3,17 @@
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import { getDiagram, getCode, deleteProjectFiles } from '../../../_utils/storage';
-import { errorResponse, successResponse, getRequestBody } from '../../../_utils/response';
+import { errorResponse, successResponse, getRequestBody, getPathname } from '../../../_utils/response';
 import { handleOptions } from '../../../_utils/cors';
 
 export const config = { runtime: 'nodejs' };
 
-function getPathParts(req: IncomingMessage): string[] {
-  const url = req.url || '';
-  const path = url.split('?')[0];
-  return path.split('/').filter(Boolean);
+function getUserIdProjectId(req: IncomingMessage): { userId: string; projectId: string } | null {
+  const pathname = getPathname(req.url);
+  const parts = pathname.split('/').filter(Boolean);
+  const idx = parts.indexOf('projects');
+  if (idx < 0 || parts.length < idx + 3) return null;
+  return { userId: parts[idx + 1], projectId: parts[idx + 2] };
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -20,21 +22,27 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  const pathParts = getPathParts(req);
-  const userId = pathParts[2];
-  const projectId = pathParts[3];
-
-  if (!userId || !projectId) {
+  const ids = getUserIdProjectId(req);
+  if (!ids) {
     errorResponse(res, 'User ID and Project ID are required', 400);
     return;
   }
+  const { userId, projectId } = ids;
 
   const token = process.env.BLOB_READ_WRITE_TOKEN;
 
   try {
     if (req.method === 'GET') {
-      const diagram = await getDiagram(userId, projectId, token);
-      const code = await getCode(userId, projectId, token);
+      let diagram: any = null;
+      let code: string | null = null;
+      try {
+        [diagram, code] = await Promise.all([
+          getDiagram(userId, projectId, token),
+          getCode(userId, projectId, token),
+        ]);
+      } catch (e) {
+        console.error('[API] Error loading project files:', e);
+      }
 
       if (!diagram && !code) {
         errorResponse(res, 'Project not found', 404);
