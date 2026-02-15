@@ -25,6 +25,7 @@ export async function saveDiagram(userId: string, projectId: string, diagramData
     access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
+    allowOverwrite: true,
     token: token || getBlobToken(),
   });
   return blob.url;
@@ -64,6 +65,7 @@ export async function saveCode(userId: string, projectId: string, code: string, 
     access: 'public',
     contentType: 'text/plain',
     addRandomSuffix: false,
+    allowOverwrite: true,
     token: token || getBlobToken(),
   });
   return blob.url;
